@@ -12,9 +12,9 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initCars(CarRepository carRepository) {
         return args -> {
-            carRepository.save(new Car(null, CarType.SEDAN, true));
-            carRepository.save(new Car(null, CarType.SUV, true));
-            carRepository.save(new Car(null, CarType.VAN, false));
+            carRepository.save(new Car(CarType.SEDAN, true));
+            carRepository.save(new Car(CarType.SUV, true));
+            carRepository.save(new Car(CarType.VAN, false));
         };
     }
 }

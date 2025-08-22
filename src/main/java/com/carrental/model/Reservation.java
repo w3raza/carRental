@@ -18,6 +18,9 @@ public class Reservation {
     private Car car;
 
     private LocalDateTime startDateTime;
+
+    private LocalDateTime endDateTime;
+
     private int numberOfDays;
 }
 
