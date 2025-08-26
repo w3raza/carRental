@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 @Data
 @Entity
@@ -18,10 +17,7 @@ public class Car {
     @Enumerated(EnumType.STRING)
     private CarType type;
 
-    private boolean available;
-
-    public Car(CarType type, boolean available) {
+    public Car(CarType type) {
         this.type = type;
-        this.available = available;
     }
 }

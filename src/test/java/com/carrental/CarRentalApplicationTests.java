@@ -1,7 +1,7 @@
 package com.carrental;
 
+import com.carrental.service.InventoryService;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import com.carrental.model.Car;
 import com.carrental.model.CarType;
@@ -12,31 +12,33 @@ import com.carrental.service.CarRentalService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import java.time.LocalDateTime;
 import java.util.List;
 
 
-@DataJpaTest
-@ContextConfiguration(classes = {com.carrental.CarRentalApplication.class, com.carrental.service.CarRentalService.class})
+@SpringBootTest
 class CarRentalApplicationTests {
     @Autowired
     private CarRepository carRepository;
     @Autowired
     private ReservationRepository reservationRepository;
+    @Autowired
+    private InventoryService inventoryService;
+    @Autowired
     private CarRentalService carRentalService;
 
     @BeforeEach
     void setUp() {
-        carRentalService = new CarRentalService(carRepository, reservationRepository);
-        carRepository.deleteAll();
         reservationRepository.deleteAll();
+        reservationRepository.flush();
+        carRepository.deleteAll();
+        carRepository.flush();
 
-        carRepository.save(new Car(null, CarType.SEDAN, true));
-        carRepository.save(new Car(null, CarType.SEDAN, true));
-        carRepository.save(new Car(null, CarType.SUV, true));
-        carRepository.save(new Car(null, CarType.VAN, true));
+        carRentalService.save(CarType.SEDAN);
+        carRentalService.save(CarType.SEDAN);
+        carRentalService.save(CarType.SUV);
+        carRentalService.save(CarType.VAN);
     }
 
 
@@ -62,9 +64,7 @@ class CarRentalApplicationTests {
         carRentalService.reserveCar(CarType.SEDAN, startDate.plusDays(1), 2);
 
         // When & Then
-        Assertions.assertThrows(RuntimeException.class, () -> {
-            carRentalService.reserveCar(CarType.SEDAN, startDate.plusDays(2), 2);
-        });
+        Assertions.assertThrows(RuntimeException.class, () -> carRentalService.reserveCar(CarType.SEDAN, startDate.plusDays(1), 2));
     }
 
     @Test
@@ -94,4 +94,23 @@ class CarRentalApplicationTests {
         // Then
         Assertions.assertEquals(1, sedansAfter.size());
     }
+
+    @Test
+    void shouldNotAddMoreCarsThanCapacity() {
+        CarType type = CarType.SEDAN;
+
+        int capacity = inventoryService.capacityOf(type);
+
+        long existing = carRepository.countByType(type);
+
+        for (int i = 0; i < capacity - existing; i++) {
+            Car car = carRentalService.save(type);
+            Assertions.assertNotNull(car.getId());
+        }
+
+        RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () -> carRentalService.save(type));
+
+        Assertions.assertTrue(exception.getMessage().contains("Limit reached"));
+    }
+
 }
